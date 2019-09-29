@@ -2,6 +2,6 @@
 
 DVSM.r - A DISCONTINUOUSVARIED-ORDER MINING METHOD implementation in R. The user inputs are located after the "INPUT STARTS" section.
 
-Cluster.r - An implementation of the hierarchical cluster, made especially for this DVSM application
+Cluster.r - An implementation of the hierarchical cluster, made especially for this DVSM application. The inputs are files resulting from the DVSM.r
 
 adlnormal - Dataset used. Source : http://casas.wsu.edu/datasets/ - DATASET 1 - Kyoto
