@@ -1,3 +1,11 @@
+### ALGORITMO DVSM, parte do projeto de fim de curso :
+## RECONHECIMENTO DE ATIVIDADES HUMANAS VIA APRENDIZADO DE MAQUINA EM AMBIENTE RESIDENCIAL
+## Engenharia de COntrole e Automação - UFMG
+## Autor : André Lage 
+## Email : andrelagerocha@gmail.com
+## github : andrelr22
+
+
 
 rm(list=ls())
 library(discretization)
@@ -52,6 +60,9 @@ convertTrieLabel <-function(old_label, new_label){
   }
 }
 
+# get an instance label (used for performance calculation only)
+
+
 getLabel<-function(pattern_begins, pattern_ends,conversion_table,end_act){
   
   
@@ -85,6 +96,8 @@ getLabel<-function(pattern_begins, pattern_ends,conversion_table,end_act){
   
 }
 
+#while adding a new instante to a pattern or variation, calculates the new average start time 
+
 getAvrgStartTime<-function(instances, prev_start_time, start_time){
   
   instances<-instances-1
@@ -101,6 +114,9 @@ getAvrgStartTime<-function(instances, prev_start_time, start_time){
   
   return(AvrgTime)
 }
+
+
+#while adding a new instante to a pattern or variation, calculates the new average duration
 
 getDuration<-function(firstSensor, size, data, conversion_table){
   
@@ -157,9 +173,12 @@ getDuration<-function(firstSensor, size, data, conversion_table){
   delta_t = (difftime(POSIX_end, POSIX_start, units = "secs"))
   
   retlist<-list(as.numeric(delta_t),as.character(data[start,2]))
-  #print(as.numeric(delta_t))
+
   return(retlist)
 }
+
+# initial filter, where other informations that are not sensors are removed. 
+# if using a different dataset, this function must be totally revised
 
 filteredData<-function(data){
   
@@ -168,7 +187,7 @@ filteredData<-function(data){
   
   for(i in 1:nrow(data)){
     
-    if(startsWith(as.character(data[i,3]),'M') && as.character(data[i,4]) =='ON' ){
+    if(startsWith(as.character(data[i,3]),'M') && as.character(data[i,4]) =='ON' ){ ## only activations (ON) are being considered
       sensors<-c(sensors,data[i,3])
       conversion_table<-c(conversion_table,i)
         
@@ -206,8 +225,12 @@ filteredData<-function(data){
   
 }
 
+#get data from a csv. For this dataset, the data was divided in different files.
+#we also get the activity which every sensor activation belongs 
+
 getData<-function(){
-  setwd("C:/Users/andre/Desktop/UFMG/PFC/Datasets/adlnormal")
+  
+  setwd("C:/Users/andre/Desktop/UFMG/PFC/Datasets/adlnormal") #csv lotation
   data<-NULL
   
  
@@ -795,6 +818,7 @@ getData<-function(){
   return(retlist)
 }
 
+#checks if a pattern (ex:A-B-C) is inside a sequence (ex:X-A-B-C-Y)
 
 isInside<-function(A,B){
   j=1
@@ -833,14 +857,14 @@ isInside<-function(A,B){
    
 }
 
-Continuity<-function(){
-  return(1)
-}
+#Calculates the softmax
 
 softMax<-function(c){''
   ret<-1/(1+exp(c))
   return(ret)
 }
+
+#compares 'S' with the pattern trie and variation trie. Checks if 'S' is an discontinuous instance of a pattern or variation
 
 checkDisc<-function(S,trie,trie_var){
   
@@ -852,7 +876,7 @@ checkDisc<-function(S,trie,trie_var){
     pattern<-as.numeric(unlist(strsplit(keys[i],'-')))
     
     aux<-NULL
-    disc<-isInside(sequence,pattern) # INVERTER 
+    disc<-isInside(sequence,pattern) 
  
      if(disc != 0 ){
 
@@ -911,6 +935,7 @@ checkDisc<-function(S,trie,trie_var){
     return(return_patterns)
   }
   
+#calculates the compression value of a pattern
   
 compressionPattern<-function(D, pattern_size, instances_numb, continuity){
   
@@ -919,6 +944,8 @@ compressionPattern<-function(D, pattern_size, instances_numb, continuity){
   
   return(softMax(C))
 }
+
+#calculates the compression value of a variation
 
 compressionVariation<-function(D,pattern_size,variation_size,pattern_instances_numb, variation_instances_numb, continuity){
   
@@ -932,10 +959,10 @@ compressionVariation<-function(D,pattern_size,variation_size,pattern_instances_n
   
 }
 
-## TODO PENSAR DEPOIS -> É POSSIVEL QUE VÁRIOS PADRÕES PASSEM DO THRESHOLD, DEVEMOS CONSIDERAR O PRIMEIRO COMO PADRÃO "PAI" DA VARIAÇÃO?
+#Checks if an instance is a new pattern or a variation of an existing pattern
+
 checkVar<-function(threshold,trie,possible_pattern,trie_var){
 
-  debug_variable=0 ##TODO deletar depois
   selected_pattern=-1
   var_values<-get_values(trie_var)
   keys<-get_keys(trie) ##OBTEM TODAS AS CHAVES
@@ -976,7 +1003,7 @@ checkVar<-function(threshold,trie,possible_pattern,trie_var){
 
       selected_pattern<-i
       threshold<-leven
-      debug_variable<-debug_variable+1
+      
 
       
     }
@@ -996,6 +1023,8 @@ checkVar<-function(threshold,trie,possible_pattern,trie_var){
  
   
 } 
+
+## adds a variation instance to the variation trie
 
 addTrieVar<-function(trie_var,pattern, father_pattern, duration, start_time,label){
   
@@ -1030,23 +1059,26 @@ addTrieVar<-function(trie_var,pattern, father_pattern, duration, start_time,labe
     
     new_start_time<-(( (as.numeric(unlist(strsplit(pattern_value,'!'))[6]) * (instance_count - 1)) + start_time )/instance_count)
     new_label<-convertTrieLabel(unlist(strsplit(pattern_value,'!'))[7],label)
+    ##value structure : variation Sequence- father pattern sequence - Number of instances - avr discontinuity - avr duration - avr start time - pattern label (used for performance calculation only)
     
     new_value<-paste(pattern,father_pattern,instance_count,new_disc,new_duration,new_start_time,new_label,sep = '!')
     
     
 
-    trie_add(trie_var, pattern, new_value) ## adiciona 1 ao número de instâncias daquele padrão
+    trie_add(trie_var, pattern, new_value) ## adiciona 1 ao número de instâncias daquela variação
   }
   else{
-    #print(duration)
+
     new_value<-paste(pattern,father_pattern,'1','1',duration,  start_time , paste(label,'1', sep = '@') , sep = '!')
 
-    trie_add(trie_var, pattern, new_value) ##adiciona padrão novo na trie
+    trie_add(trie_var, pattern, new_value) ##adiciona variação  novo na trie
   }
   
   return (trie_var)
   
 }
+
+## adds a new pattern to the pattern trie
 
 addTrie <-function(trie,pattern,duration,start_time,label){
   
@@ -1078,13 +1110,15 @@ addTrie <-function(trie,pattern,duration,start_time,label){
     
     new_start_time<-(( (as.numeric(unlist(strsplit(pattern_value,'!'))[5]) * (instance_count - 1)) + start_time )/instance_count)
     new_label<-convertTrieLabel(unlist(strsplit(pattern_value,'!'))[6],label)
-
+    
+    ##value structure : pattern Sequence- Number of instances - avr discontinuity - avr duration - avr start time - pattern label (used for performance calculation only)
+    
     new_value<-paste(pattern,instance_count,new_disc,new_duration,new_start_time, new_label, sep = '!')
 
     trie_add(trie, pattern, new_value) ## adiciona 1 ao número de instâncias daquele padrão
   }
   else{
-   #print(duration)
+
     new_value<-paste(pattern,'1', '1', duration,  start_time , paste(label,'1', sep = '@'), sep = '!')
 
     trie_add(trie, pattern, new_value) ##adiciona padrão novo na trie
@@ -1093,10 +1127,14 @@ addTrie <-function(trie,pattern,duration,start_time,label){
   return (trie)
 }
 
+##
+
+##after obtaining all the patterns and variations are inside a new filtered sequence (with discontinuities),
+##this function adds this sequence to the variation and pattern tries
 
 addDisc<-function(trie,trie_var,disc_vector,duration,start_time, label){
   
-  if(as.numeric(duration)> 1000 || as.numeric(duration < 0)){
+  if(as.numeric(duration)> 1000 || as.numeric(duration < 0)){ ##small filter, to aviod cases where the duration is over a 1000 seconds (caused by breaks between two people performing the activities)
     return(0)
     
   }
@@ -1183,6 +1221,7 @@ addDisc<-function(trie,trie_var,disc_vector,duration,start_time, label){
     
   }
   
+## Prunes all variations that are not frequent
 
 PruningVar<-function(trie,trie_var,threshold,sensors){
   pattern_keys<-get_keys(trie)
@@ -1237,6 +1276,7 @@ PruningVar<-function(trie,trie_var,threshold,sensors){
   
 }
 
+#obtains the number of instances of all variations of a pattern
 
 VariationsInstancesNumb<- function(trie_var, pattern){ #obtem o número de instâncias de todas as variações de um padrão
   
@@ -1256,7 +1296,7 @@ VariationsInstancesNumb<- function(trie_var, pattern){ #obtem o número de instân
   return(var_count)
 }
 
-#TODO -> Conta de bits removidos está parcialmente errada, pq variações não possuem o mesmo tamanho do padrão
+# prunes not frequent patterns
 
 Pruning<-function(trie, threshold, sensors, trie_var){
 
@@ -1318,6 +1358,7 @@ Pruning<-function(trie, threshold, sensors, trie_var){
 } 
 
 
+#calculates the description length of a pattern or variation
 
 descriptionLength<-function(D, pattern_size, instances_numb){
   
@@ -1329,6 +1370,8 @@ descriptionLength<-function(D, pattern_size, instances_numb){
   }
 
 
+## adds prefix and sulfix of patterns and variations in the tries,
+##creating new sequences, that are analyzed and classified as patterns or variations (considered discontinuities)
 
 addPrefixSulfix<-function(sensors,size,trie,trie_var,threshold,data,conversion_table, end_act){
   samples<-length(sensors)
@@ -1341,10 +1384,6 @@ addPrefixSulfix<-function(sensors,size,trie,trie_var,threshold,data,conversion_t
     aux<-sensors[i]
     first_sensor_index <- i
     
-    #if(size == 3  && ((i/samples*100)>1)){ ## USADO PARA TESTES -> DELETAR DEPOIS
-     # readline(prompt="Press [enter] to continue")
-      
-    #}
     
     
     for(j in 2:size){ ##obtem sequencias de size sensores
@@ -1362,7 +1401,7 @@ addPrefixSulfix<-function(sensors,size,trie,trie_var,threshold,data,conversion_t
     match_var<-longest_match(trie_var, potencial_pattern)
     
     match<-longest_match(trie,potencial_pattern) ##confere se o padrão está contido na arvore, visando não obter prefixo e sufixos de padrões já prunados
-    ## ADD tbm da match com a arvore de variações
+    
     
     if(is.na(match_var)){
       match_var<-'#@9$#$Af#=+#NA'
@@ -1376,10 +1415,8 @@ addPrefixSulfix<-function(sensors,size,trie,trie_var,threshold,data,conversion_t
       match<-unlist(strsplit(match,'!'))[1]
     }
     
-    # TODO -> CONFERIR SE PADRÕES EXCLUIDOS POR BAIXA FREQUENCIA NÃO TRIGGAM O IF ABAIXO
     
-    
-    ## ADD adicionar outro if para a trie de variações
+  
     if(match == potencial_pattern || match_var==potencial_pattern) { ### se TRUE, padrão está na arvore
       
       
@@ -1466,10 +1503,8 @@ addPrefixSulfix<-function(sensors,size,trie,trie_var,threshold,data,conversion_t
 }
 
 
-#add_prefix 
-#Ideia base -> utilizando a tabela doubles, procurar todas as instâncias de doubles 
-## em complete_list. 
 
+##calculates levenshtein
 
 
 levenshtein <-function(a,b){
@@ -1479,6 +1514,8 @@ levenshtein <-function(a,b){
   return(1 - (leven/module))
   
 }
+
+## read all data from the csv, creating size-2 patterns, with a sliding window
 
 slidingWindow<-function(sensors, data, conversion_table, end_act){
   
@@ -1522,21 +1559,18 @@ slidingWindow<-function(sensors, data, conversion_table, end_act){
   
 }
 
-#setwd("C:/Users/andre/Desktop/UFMG/PFC/Datasets/twor.summer.2009/")
-#data<-read.csv("data1.csv")
+#### thresholds
 
-# 40 instancias de um padrão de tamanho 2 com continuidade 1
-#compressionPattern((sensors), 80,2,1)
+## threshold to prune a pattern
 prunning_threshold <-0.263967
 
-#prunning_threshold <-0.263967,0.264967,
-#compressionVariation(sensors, pattern_size, variation_size, pattern_instances_numb, variation_instances_numb, variation_continuity )
-#compressionVariation(sensors, 3, 4, 100, 2, 1)
-# 5 das 50 instâncias são da variação X
+## threshold to prune a variance
 prunning_var_threshold<-0.2779242
+
+## similarity threshold - if a new instance and a pattern have a similarity greater than this threshold,
+## this instance is considered a variation of that pattern
 variance_threshold<-0.85
-#prunning_var_threshold<-0.2779242
-############################################# DATASET NOVO
+
 
 retlist<-getData()
 data<-retlist[[1]]
@@ -1546,7 +1580,7 @@ filtered<-filteredData(data)
 sensors<-unlist(filtered[1])
 conversion_table<-unlist(filtered[2])
 
-############################################# DATASET ANTIGO 
+
 
 #data<-read.delim("annotated")
 #sensors<-as.numeric(data[,3])
@@ -1563,23 +1597,14 @@ new_length<-length(trie)
 
 size<-2
 u<-1
-#while(old_length != new_length || u==15){
+
 while(u<25){ 
-  print(11)
   trie<-addPrefixSulfix(sensors,size,trie,trie_var,variance_threshold,data,conversion_table, end_act)
-  print(12)
   trie<-Pruning(trie,prunning_threshold,sensors, trie_var)
-  print(13)
   trie_var<-PruningVar(trie,trie_var,prunning_var_threshold,sensors)
-  print(14)
   size<-size+1
   old_length<-new_length
-  print('size')
-  print(u)
-  print('length')
-
   new_length<-length(trie)
-
   u<-u+1
 }
 
@@ -1587,34 +1612,24 @@ trie_values <- get_values(trie)
 trie_keys <- get_keys(trie)
 var_values <-get_values(trie_var)
 var_keys <- get_keys(trie_var)
-setwd("C:/Users/andre/Desktop/UFMG/PFC/Codigos/Cluster/testes0206 - alterando threshold similaridade/0.65/")
-write.csv(trie_values, file ='trie_values.csv')
+
+
+### OUTPUTS 
+
+# trie_keys - keys from the pattern trie
+#trie_values - values from the pattern trie (a pattern has the same index in trie_keys and trie_values)
+
+# var_keys - keys from the variations trie
+#var_values - values from the variations trie (a variation has the same index in var_keys and var_values)
+
+# levels - list of all sensors and the id (level) of each one of them
+
+write.csv(trie_values, file ='trie_values.csv') 
 write.csv(trie_keys, file ='trie_keys.csv')
 write.csv(var_values, file ='var_values.csv')
 write.csv(var_keys, file ='var_keys.csv')
 
+
 levels = sapply(data[1,3],levels)
 write.csv(levels, file = 'factor_levels.csv')
 
-###TESTBENCH PART, DELETE IT LATTER 
-S<-'46-41-42-42-42-42-42-42-36'
-
-
-
-
-
-##Compression threshold -> 0.3 
-##Compression Variation threshold -> 0.1 
-##frequent events threshhold -> 0.6
-
-###TODO 
-## 1- TESTAR MUDANÇA DE 3 PARA 4 PADRÕES  OK
-## 2- CRIAR PODA DE AMOSTRAS SEM DESCONTINUIDADE(DEIXAR UMA CONSTANTE NO LUGAR)
-## 3- ELABORAR AS FUNÇÕES DE CONTINUIDADE 
-## 4- ATRIBUIR PADRÕES A VARIAÇÕES(UMA VARIAÇÃO É MAIOR EM TAMANHO QUE SEU PADRÃO ORIGINAL, MAS E PARA 2 PADRÕES DE MESMO TAMANHO??)  RELER A PROCURA DE MAIS ITENS FALTANTES
-##
-
-
-####DUVIDAS 
-
-## 1- ONDE ENCONTRO O A SIMILARIDADE MÍNIMA PARA 2 PADRÕES SEREM VARIAÇÕES -> MENOR QUE 0.4?
