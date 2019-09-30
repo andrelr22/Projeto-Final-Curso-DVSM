@@ -1,9 +1,21 @@
 
+#----------------------------------------------------------------------------------------------
+
+
+### ALGORITMO de cluster hierárquico, parte do projeto de fim de curso :
+## RECONHECIMENTO DE ATIVIDADES HUMANAS VIA APRENDIZADO DE MAQUINA EM AMBIENTE RESIDENCIAL
+## Engenharia de COntrole e Automação - UFMG
+## Autor : André Lage 
+## Email : andrelagerocha@gmail.com
+## github : andrelr22
+
+# ----------------------------------------------------------------------------------------------
+
 
 
 rm(list=ls())
 
-
+#creates a matrix of distances for the house rooms. If both patterns happens in the same room, the distance is 0, otherwise the distance is 1
 checkDistRoom<-function(room){
   
   
@@ -30,11 +42,13 @@ checkDistRoom<-function(room){
   
 }
 
+#get mode of a vector
 Mode <- function(x) {
   ux <- unique(x)
   ux[which.max(tabulate(match(x, ux)))]
 }
 
+#  read all instances labels from a pattern (including labels from its variations) and determine an label for it.
 getLabel<-function(pattern, labels_instances, variation_table, threshold){
   
   variation_index<-getPatternVar(pattern, variation_table)
@@ -57,7 +71,7 @@ getLabel<-function(pattern, labels_instances, variation_table, threshold){
     for(i in 1:length( selected_variations)){
       variation_labels<-unlist(strsplit(selected_variations[i], '-'))
       for(j in 1:length(variation_labels)){
-        print(variation_labels[j])
+ 
         aux<-as.numeric(strsplit( variation_labels[j], "@")[[1]])
         
         if(aux[1]%in%labels){
@@ -93,6 +107,7 @@ getLabel<-function(pattern, labels_instances, variation_table, threshold){
   return ('X')
 }
 
+# gets the room that a pattern happens, using mode .
 
 getRoom <-function(pattern1,instances1, variation_table,factors) {
   
@@ -135,6 +150,7 @@ getRoom <-function(pattern1,instances1, variation_table,factors) {
   
 }
 
+# reads a pattern and, based on its sensors, determines which room this pattern happend
 
 houseRooms<-function(pattern,factors){
   
@@ -170,7 +186,7 @@ houseRooms<-function(pattern,factors){
       }else{
       
         print('sensor não cadastrado em houseRooms')
-        print(aux)
+
     }
     
   }
@@ -178,20 +194,18 @@ houseRooms<-function(pattern,factors){
   return(Mode(location) )
 }
 
-
+# calculates the levenshtein distance
 
 levenshtein <-function(a,b){
-  print('leveen')
-  print(a)
-  print(b)
-  
+ 
   leven <- adist(intToUtf8(a),intToUtf8(b))
   module<-max(length(a),length(b))
-  print(1 - (leven/module))
+
   return(1 - (leven/module))
   
 }
 
+# gets a matrix with similarity distance among all patterns
 SimilarityDist<-function(patterns, variations){
   num_patterns<-nrow(patterns)
   similarity<-matrix(nrow = num_patterns , ncol = num_patterns)
@@ -210,7 +224,7 @@ SimilarityDist<-function(patterns, variations){
   
 }
 
-
+# get the average duration of a pattern
 
 getDuration <-function(pattern1,instances1, duration, variation_table) {
   
@@ -231,20 +245,20 @@ getDuration <-function(pattern1,instances1, duration, variation_table) {
     
     variation_instances<-c(variation_instances,instances1)
     variation_duration<-c(variation_duration,duration)
-    print(variation_duration)
-    print(variation_instances)
+
     avr<-weighted.mean(as.numeric(variation_duration),as.numeric(variation_instances))
     return(avr)
     
   }
   
 }
+#gets the average start time of a pattern
 
 getStartTime <-function(pattern1,instances1, start_time, variation_table) {
   
-  print(pattern1)
+  
   variation_index1<-getPatternVar(pattern1,variation_table)
-  print('ohaio okarin')
+ 
   
 
   if(is.null(variation_index1)){
@@ -260,14 +274,13 @@ getStartTime <-function(pattern1,instances1, start_time, variation_table) {
 
     variation_instances<-c(variation_instances,instances1)
     variation_start_time<-c(variation_start_time,start_time)
-    print(variation_start_time)
-    print(variation_instances)
     avr<-weighted.mean(as.numeric(variation_start_time),as.numeric(variation_instances))
     return(avr)
     
   }
   
 }
+#caclulates the average similarity between 2 patterns (including all variations)
 
 getSimilarity <-function(pattern1, pattern2,instances1, instances2, variation_table) {
   
@@ -324,6 +337,7 @@ getSimilarity <-function(pattern1, pattern2,instances1, instances2, variation_ta
   
 }
 
+# get all variations from a pattern 
 getPatternVar<-function (pattern, variation_table){
   
   variations_index<-NULL
@@ -341,9 +355,20 @@ getPatternVar<-function (pattern, variation_table){
   
 }
 
+
+### INPUT STARTS --------------------------
+## csv's folder, change it to suit your local machine
 setwd("C:/Users/andre/Desktop/UFMG/PFC/Codigos/Cluster/teste 1 - 0705/")
 
+#more info about those inputs in DVSM.R
 patterns <-read.csv('trie_values.csv')
+variations<-read.csv('var_values.csv')
+factors<-read.csv('factor_levels.csv')
+
+## INPUT ENDS -----------------------------------------
+
+#pre process csv data
+
 raw_patterns <- patterns[2]
 raw_patterns <-raw_patterns$x
 raw_patterns <-as.character(raw_patterns)
@@ -357,12 +382,14 @@ for(i in 1:length(raw_patterns)){
 }
 
 
-variations<-read.csv('var_values.csv')
+#pre process csv data
+
 
 raw_variations <- variations[2]
 raw_variations <-raw_variations$x
 raw_variations <-as.character(raw_variations)
 
+# pre process csv data
 
 variations<-NULL
 for(i in 1:length(raw_variations)){
@@ -372,7 +399,7 @@ for(i in 1:length(raw_variations)){
 }
 
 
-factors<-read.csv('factor_levels.csv')
+
 factors<-factors$V1
 factors<-as.character(factors)
 
@@ -382,7 +409,12 @@ similarity<-NULL
 roomy<-NULL
 labels<-NULL
 
+#label threshold. If more than 45% of all instances from a pattern X are labeled as activity A1, this pattern label becames A1. 
+# If none of the activities get over 45% instances of that pattern, it will not have a label.
+
 label_threshold<-0.45
+
+#separate the pattern table into vectors
 for(i in 1:nrow(patterns)){
   
   start_time<-c(start_time,getStartTime(patterns[i,1], patterns[i,2], patterns[i,5], variations))
@@ -413,11 +445,14 @@ B=1 * 0.25 ## DURATION
 C=41 * 4### SIMILARITY 
 D=98 * 0.5 ### ROOM
 
+# calculates the distance matrix
 dist_matrix<-start_time*A + duration*B + similarity*C + room*D
 dist_matrix<-dist_matrix/mean(dist_matrix)
 
+# cluster algorithm 
 hc.complete =hclust(dist_matrix, method="average", members=NULL)
-#par(mfrow=c(1,3))
+
+# plots the resulting dendogram
 plot(hc.complete ,main="Dendograma", xlab="", sub="",
      cex=.9)
 
@@ -457,13 +492,11 @@ for( i in 1:5){
 }
 
 write.csv(resulting_clusters, file = 'resultadosClustertest1.csv')
-resulting_clusters
-## 0.45 -> 
 
-##  Atividade 1 -> precision 100% recall 100%
-##  Atibidade 2 -> precision 0% recall 0% 
-## atividade 3  -> precision 100% recall 100%
-## atividade 4 -> precision 100% recall 100%
-## atividade 5 -> precision 100% recall 75% 
+### OUTPUTS - 
+
+#resulting_clusters - a table with the results. Each row contains an activity and each collumn a cluster. In a way that [1,1] for example contains the number of patterns labeled as activity 1 that were grouped as part of cluster 1
+
+resulting_clusters
 
 
