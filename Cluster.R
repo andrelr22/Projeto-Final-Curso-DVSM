@@ -2,10 +2,10 @@
 #----------------------------------------------------------------------------------------------
 
 
-### ALGORITMO de cluster hier·rquico, parte do projeto de fim de curso :
+### ALGORITMO de cluster hier√°rquico, parte do projeto de fim de curso :
 ## RECONHECIMENTO DE ATIVIDADES HUMANAS VIA APRENDIZADO DE MAQUINA EM AMBIENTE RESIDENCIAL
-## Engenharia de COntrole e AutomaÁ„o - UFMG
-## Autor : AndrÈ Lage 
+## Engenharia de COntrole e Automa√ß√£o - UFMG
+## Autor : Andr√© Lage 
 ## Email : andrelagerocha@gmail.com
 ## github : andrelr22
 
@@ -185,7 +185,7 @@ houseRooms<-function(pattern,factors){
         
       }else{
       
-        print('sensor n„o cadastrado em houseRooms')
+        print('sensor n√£o cadastrado em houseRooms')
 
     }
     
@@ -205,7 +205,7 @@ levenshtein <-function(a,b){
   
 }
 
-# gets a matrix with similarity distance among all patterns
+# gets a similarity distance matrix, comparing all patterns
 SimilarityDist<-function(patterns, variations){
   num_patterns<-nrow(patterns)
   similarity<-matrix(nrow = num_patterns , ncol = num_patterns)
@@ -224,7 +224,7 @@ SimilarityDist<-function(patterns, variations){
   
 }
 
-# get the average duration of a pattern
+# gets the average duration of a pattern
 
 getDuration <-function(pattern1,instances1, duration, variation_table) {
   
@@ -495,7 +495,9 @@ write.csv(resulting_clusters, file = 'resultadosClustertest1.csv')
 
 ### OUTPUTS - 
 
-#resulting_clusters - a table with the results. Each row contains an activity and each collumn a cluster. In a way that [1,1] for example contains the number of patterns labeled as activity 1 that were grouped as part of cluster 1
+#resulting_clusters - a table with the results. 
+#Each row contains an activity and each collumn a cluster. In a way that [1,1] for example contains the number of patterns
+#labeled as activity 1 that were grouped as part of cluster 1
 
 resulting_clusters
 
